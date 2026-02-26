@@ -1,30 +1,27 @@
 from __future__ import annotations
 
 from pathlib import Path
-from dataclasses import dataclass, field
+from pydantic import BaseModel, Field
+from typing import Optional
 
 import yaml
 
 
-@dataclass
-class AgentConfig:
+class AgentConfig(BaseModel):
     url: str = "http://localhost:8000"
 
 
-@dataclass
-class BotConfig:
-    host: str = "127.0.0.1"
-    port: int = 8080
+class BotConfig(BaseModel):
+    server_url: str
 
+class AppConfig(BaseModel):
+    agent: AgentConfig = Field(default_factory=AgentConfig)
+    bots: list[BotConfig] = Field(default_factory=list)
+    log: str | None = None
 
-@dataclass
-class AppConfig:
-    agent: AgentConfig = field(default_factory=AgentConfig)
-    bots: list[BotConfig] = field(default_factory=list)
-
-    @staticmethod
-    def load(path: str = "config.yaml") -> AppConfig:
-        raw = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
-        agent = AgentConfig(**raw.get("agent", {}))
-        bots = [BotConfig(**b) for b in raw.get("bots", [])]
-        return AppConfig(agent=agent, bots=bots)
+    @classmethod
+    def load(cls, path: str) -> AppConfig:
+        if not Path(path).exists():
+            raise FileNotFoundError(f"配置文件 {path} 不存在")
+        with open(path, "r", encoding="utf-8") as f:
+            return cls(**yaml.safe_load(f))

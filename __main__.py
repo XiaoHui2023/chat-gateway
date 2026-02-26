@@ -1,42 +1,43 @@
+import argparse
+import logging
 import uuid
 
 from ai_hub_agents.client import AgentClient
 from qq_adapter_protocol import MessageRequest, MessageResponse, run_all
+from config import setup_logging
+from models import AppConfig
 
-from .models import AppConfig
-
-
-async def handle(msg: MessageRequest) -> MessageResponse:
-    print(f"message=\n{msg}")
-    return MessageResponse(content=msg.content)
-    thread_key = f"{msg.sender_id}"
-    if thread_key not in threads:
-        threads[thread_key] = str(uuid.uuid4())
-
-    print(f"[{bot_name}] {msg.sender_id}: {msg.content}")
-    result = client.invoke(msg.content, thread_id=threads[thread_key])
-    print(f"[{bot_name}] → {result}")
-
-    return MessageResponse(content=result)
+logger = logging.getLogger("chat_gateway")
 
 
 def main() -> None:
-    config = AppConfig.load()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--config", default="config.yaml", help="配置文件路径")
+    args = parser.parse_args()
+
+    config = AppConfig.load(args.config)
+    setup_logging(config.log)
 
     client = AgentClient(config.agent.url)
 
+    async def handle(msg: MessageRequest) -> MessageResponse:
+
+        logger.info(f"[{msg.sender_id}] ← {msg.content}")
+        result = client.invoke(msg.content, thread_id=msg.sender_id)
+        logger.info(f"[{msg.sender_id}] → {result.text}")
+
+        return MessageResponse(content=result.text)
+
     if not config.bots:
-        print("config.yaml 中未配置任何 bot")
+        logger.warning("config.yaml 中未配置任何 bot")
         return
 
     connections = tuple(
-        (bot.host, bot.port, handle)
+        {"handler": handle, "server_url": bot.server_url}
         for bot in config.bots
     )
 
-    print(f"启动 {len(config.bots)} 个 bot 连接:")
-    for bot in config.bots:
-        print(f"  - {bot.name} → {bot.host}:{bot.port}")
+    logger.info("启动 %d 个 bot 连接:", len(config.bots))
 
     run_all(*connections)
 
