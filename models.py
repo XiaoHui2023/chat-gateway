@@ -13,7 +13,6 @@ class AgentConfig:
 
 @dataclass
 class BotConfig:
-    name: str
     host: str = "127.0.0.1"
     port: int = 8080
 
