@@ -1,0 +1,7 @@
+agent:
+  url: "http://localhost:8000"    # AgentClient 服务地址
+
+bots:
+  - name: "my-bot"
+    host: "127.0.0.1"
+    port: 8080
