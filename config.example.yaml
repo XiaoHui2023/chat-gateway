@@ -1,8 +1,5 @@
 agent:
-  url: "http://localhost:8000"    # AgentClient 服务地址
+  url: "http://127.0.0.1:8000"
 
 bots:
-  - host: "127.0.0.1"
-    port: 8080
-
-# log: "./logs"              # 日志目录，不配置则不输出日志文件
+  - server_url: "http://127.0.0.1:8080"

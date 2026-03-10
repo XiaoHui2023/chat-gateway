@@ -1,2 +1,2 @@
-ai-hub-agents[client]
+ai-hub-agents
 qq-adapter-protocol
