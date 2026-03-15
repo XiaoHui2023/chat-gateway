@@ -1,5 +1,4 @@
-agent:
-  url: "http://127.0.0.1:8000"
-
-bots:
-  - server_url: "http://127.0.0.1:8080"
+bridges:
+  - bot_url: "http://127.0.0.1:8080"
+    hub_url: "http://127.0.0.1:8000"
+log_dir: "logs"
