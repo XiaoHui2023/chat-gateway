@@ -25,7 +25,8 @@ async def build_bridge(bridge: Bridge):
 
         logger.info(f"[{thread_id}] ← {content}")
 
-        result = ai_hub_agents.client.post(
+        result = await asyncio.to_thread(
+            ai_hub_agents.client.post,
             url=bridge.hub_url,
             thread_id=thread_id,
             query=content,
