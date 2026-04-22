@@ -2,3 +2,8 @@ config.yaml
 __pycache__/
 .env/
 logs/
+debug.bat
+build/
+.cursor/
+.venv/
+*.egg-info/
