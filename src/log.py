@@ -1,35 +1,39 @@
+from __future__ import annotations
+
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+
+from rich.logging import RichHandler
+
 
 def setup_logging(
-    log_dir: Optional[str] = None,
+    *,
+    log_dir: str,
     level: str | int = logging.INFO,
-):
-    """
-    配置全局日志。
-
-    日志始终输出到控制台，如果指定了 log_dir 则同时写入该目录下
-    以启动时间命名的日志文件（格式: YYYYMMDD_HHMMSS.log）。
-
-    Args:
-        log_dir: 日志输出目录，None 表示仅控制台输出
-        level:   日志级别，支持字符串 ("DEBUG"/"INFO"/…) 或 int
-    """
+) -> None:
+    """用 Rich 打到控制台，并在 log_dir 下按启动时间写入一份文本日志。"""
     if isinstance(level, str):
         level = getattr(logging, level.upper(), logging.INFO)
 
-    fmt = "%(asctime)s [%(name)s] %(levelname)s: %(message)s"
-    datefmt = "%Y-%m-%d %H:%M:%S"
+    dir_path = Path(log_dir)
+    dir_path.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    file_handler = logging.FileHandler(dir_path / f"{stamp}.log", encoding="utf-8")
+    file_handler.setFormatter(
+        logging.Formatter(
+            "%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+    )
 
-    handlers: list[logging.Handler] = [logging.StreamHandler()]
+    console = RichHandler(
+        rich_tracebacks=True,
+        show_time=True,
+        show_path=True,
+        markup=False,
+    )
+    console.setFormatter(logging.Formatter("%(message)s"))
 
-    if log_dir:
-        dir_path = Path(log_dir)
-        dir_path.mkdir(parents=True, exist_ok=True)
-        filename = datetime.now().strftime("%Y%m%d_%H%M%S") + ".log"
-        file_handler = logging.FileHandler(dir_path / filename, encoding="utf-8")
-        handlers.append(file_handler)
-
-    logging.basicConfig(level=level, format=fmt, datefmt=datefmt, handlers=handlers)
+    logging.basicConfig(level=level, handlers=[console, file_handler], force=True)
+    logging.getLogger("aiohttp.access").setLevel(logging.WARNING)

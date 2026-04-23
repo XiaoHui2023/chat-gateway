@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import asyncio
 import logging
 from collections.abc import Mapping
@@ -9,27 +10,24 @@ from patch_bay import LoggingPatchBayListener, PatchBay
 from patch_bay.peer import parse_host_port
 from patch_jack import Jack, LoggingJackListener
 from rich import print as rprint
-from rich.logging import RichHandler
 
-CONFIG_PATH = "config.yaml"
+from log import setup_logging
 
 
-def _configure_logging() -> None:
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(message)s",
-        datefmt="[%X]",
-        handlers=[
-            RichHandler(
-                rich_tracebacks=True,
-                show_time=True,
-                show_path=True,
-                markup=False,
-            )
-        ],
-        force=True,
+def _build_arg_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(description="Chat gateway: jacks + patch bay.")
+    p.add_argument(
+        "config",
+        nargs="?",
+        default="config.yaml",
+        help="YAML 配置文件路径（可省略，默认 config.yaml）",
     )
-    logging.getLogger("aiohttp.access").setLevel(logging.WARNING)
+    p.add_argument(
+        "--log-dir",
+        default="logs",
+        help="日志文件目录（默认 logs，目录下按启动时间生成 .log）",
+    )
+    return p
 
 
 def _local_bind_address(address: str) -> bool:
@@ -45,9 +43,10 @@ def _register_bypass(jack: Jack, label: str) -> None:
 
 
 async def main() -> None:
-    _configure_logging()
+    args = _build_arg_parser().parse_args()
+    setup_logging(log_dir=args.log_dir)
 
-    raw = load_config(CONFIG_PATH)
+    raw = load_config(args.config)
     config: Mapping[str, object] = raw if isinstance(raw, Mapping) else dict(raw)
 
     jacks: list[Jack] = []
