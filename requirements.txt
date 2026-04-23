@@ -1,3 +1,2 @@
-python-library-patch-jack[rich]==0.1.0
 python-library-patch-bay[rich]==0.2.0
 python-library-configlib==0.1.0
